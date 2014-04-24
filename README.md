@@ -7,6 +7,8 @@ Keep your stuffs anywhere !
 
 **EnderChests** do not drop their contents when broken. Items placed inside will remain present even if all instances of them are destroyed, and can be accessed by placing a new EnderChest.
 
+**EnderChests** cannot be made into double chests and cannot be placed adjacent to another chest.
+
 # Installation
 1.  Drop it into your /plugins folder.
 2.  Restart your server.
