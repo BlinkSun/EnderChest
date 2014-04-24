@@ -4,7 +4,7 @@
 __PocketMine Plugin__
 name=EnderChest
 description=I hope you know what's an EnderChest :P
-version=0.3
+version=1.0
 author=BlinkSun
 class=EnderChest
 apiversion=11,12
@@ -21,104 +21,200 @@ class EnderChest implements Plugin
 
 	public function init()
 	{
+		AchievementAPI::addAchievement("enderChest","Keep my stuffs anywhere !");
 		$this->api->addHandler("player.block.touch", array($this, "eventHandle"), 50);
 		$this->api->addHandler("player.block.break", array($this, "eventHandle"), 50);
 		$this->api->addHandler("player.block.place", array($this, "eventHandle"), 50);
 		$this->api->addHandler("player.container.slot", array($this, "eventHandle"), 50);
 		$this->enderchests = new Config($this->api->plugin->configPath($this)."enderchests.yml", CONFIG_YAML);
 	}
-
 	
 	public function eventHandle($data, $event) {
+		
 		switch ($event) {
+		
 			case "player.block.touch":
-				/*if (($tile = $this->api->tile->get(new Position($data['target']->x, $data['target']->y, $data['target']->z, $data['target']->level))) === false) break;
-				switch ($tile->class) {
-				case TILE_CHEST:
-				switch ($data['type']) {
-				case "place":*/
-				if($data["target"]->getID() == 54) {
-					if($data["target"]->level->getBlock(new Vector3($data["target"]->x, $data["target"]->y - 1, $data["target"]->z))->getID() == 87) {
-						if($this->enderchests->exists($data["target"]->x . "," . $data["target"]->y . "," . $data["target"]->z)) {
-							$slots = $this->enderchests->get($data["player"]->username);
-							$tile = $this->api->tile->get(new Position($data['target']->x, $data['target']->y, $data['target']->z, $data['target']->level));
+			
+				$player = $data["player"];
+				$target = $data["target"];
+				$tile = $this->api->tile->get(new Position($target->x, $target->y, $target->z, $target->level));
+				
+				if(($target->getID() == 54) and ($target->level->getBlock(new Vector3($target->x, $target->y - 1, $target->z))->getID() == 87)) {
+					if($this->enderchests->exists($target->x . "," . $target->y . "," . $target->z)) {
+						if($this->enderchests->get($target->x . "," . $target->y . "," . $target->z) == $player->username) {
+							
+							$slots = $this->enderchests->get($player->username);
+							
 							foreach ($slots as $key => $slot) {
 								$item = $this->api->block->getItem($slot[0], $slot[2], $slot[1]);
 								$tile->setSlot($key,$item);
 							}
-						} else { 
-							$this->enderchests->set($data["target"]->x . "," . $data["target"]->y . "," . $data["target"]->z,$data["player"]->username);
-							$this->enderchests->save();
+							break;
+							
+						} else {
+							$player->sendChat("[EnderChest] Sry, it's not your EnderChest!");
+							return false;
 						}
-					}
-				}
-				break;
-			case "player.container.slot":
-				if($data["tile"]->class == TILE_CHEST) {
-					if($this->enderchests->exists($data["tile"]->x . "," . $data["tile"]->y . "," . $data["tile"]->z)) {
+						break;
+					
+					} else {
 
-						$getenderslots = array();	
-						for($i = 0; $i < 27; $i++){
-							$getenderslots[] = array($data["tile"]->getSlot($i)->getID(),$data["tile"]->getSlot($i)->count,$data["tile"]->getSlot($i)->getMetadata());
+						$player->sendChat("[EnderChest] This EnderChest is ownerless!");
+						
+						if($this->enderchests->exists($player->username)) {
+							$slots = $this->enderchests->get($player->username);
+							$player->sendChat("[EnderChest] Now it's your EnderChest!");
+						} else {
+							$slots = array();
+							for($i = 0; $i < 27; $i++){
+								$slots[] = array(AIR,0,0);
+							}
+							$player->sendChat("[EnderChest] You got your first EnderChest!");
+							AchievementAPI::grantAchievement($player, "enderChest");
 						}
-						$this->enderchests->set($data["player"]->username,$getenderslots);
+						
+						foreach ($slots as $key => $slot) {
+							$item = $this->api->block->getItem($slot[0], $slot[2], $slot[1]);
+							$tile->setSlot($key,$item);
+						}
+						
+						$this->enderchests->set($target->x . "," . $target->y . "," . $target->z,$player->username);
+						$this->enderchests->set($player->username,$slots);
 						$this->enderchests->save();
-
+						break;
 					}
-				}
+					break;
+				}	
 				break;
+				
 			case "player.block.break":
-				if($data["target"]->getID() == 54) {
-					if($data["target"]->level->getBlock(new Vector3($data["target"]->x, $data["target"]->y - 1, $data["target"]->z))->getID() == 87) {
-						if($this->enderchests->exists($data["target"]->x . "," . $data["target"]->y . "," . $data["target"]->z)) {
-							$emptyslots = array();	
+			
+				$player = $data["player"];
+				$target = $data["target"];
+				$tile = $this->api->tile->get(new Position($target->x, $target->y, $target->z, $target->level));
+				
+				if(($target->getID() == 54) and ($target->level->getBlock(new Vector3($target->x, $target->y - 1, $target->z))->getID() == 87)) {
+					if($this->enderchests->exists($target->x . "," . $target->y . "," . $target->z)) {
+						if($this->enderchests->get($target->x . "," . $target->y . "," . $target->z) == $player->username) {
+							
+							$emptyslots = array();
+							
 							for($i = 0; $i < 27; $i++){
 								$emptyslots[] = array(AIR,0,0);
 							}
-							$tile = $this->api->tile->get(new Position($data['target']->x, $data['target']->y, $data['target']->z, $data['target']->level));
 							foreach ($emptyslots as $key => $slot) {
 								$item = $this->api->block->getItem($slot[0], $slot[2], $slot[1]);
 								$tile->setSlot($key,$item);
 							}
+							
+							$this->enderchests->remove($target->x . "," . $target->y . "," . $target->z);
+							$this->enderchests->save();
+							$player->sendChat("[EnderChest] You have broken an EnderChest!");
+							break;
+							
+						} else {
+							$player->sendChat("[EnderChest] Sry, it's not your EnderChest!");
+							return false;
 						}
+						break;
 					}
+					break;
 				}
 				break;
+				
 			case "player.block.place":
-				if($data["item"]->getID() == 54) {
-					if($data["block"]->level->getBlock(new Vector3($data["block"]->x, $data["block"]->y - 1, $data["block"]->z))->getID() == 87) {
-						$this->enderchests->set($data["block"]->x . "," . $data["block"]->y . "," . $data["block"]->z,$data["player"]->username);
+			
+				$player = $data["player"];
+				$block = $data["block"];
+				$item = $data["item"];
+				
+				if($item->getID() == 54) {
+					if(($this->getSideChest($block) == false) and ($block->level->getBlock(new Vector3($block->x, $block->y - 1, $block->z))->getID() == 87)){
+
+						$this->enderchests->set($block->x . "," . $block->y . "," . $block->z,$player->username);
 						$this->enderchests->save();
-						if($this->enderchests->exists($data["player"]->username)) {
-						}else{
+									
+						if(!$this->enderchests->exists($player->username)) {
+						
 							$emptyslots = array();	
 							for($i = 0; $i < 27; $i++){
 								$emptyslots[] = array(AIR,0,0);
 							}
-							$this->enderchests->set($data["player"]->username,$emptyslots);
+							
+							$this->enderchests->set($player->username,$emptyslots);
 							$this->enderchests->save();
-							$data["player"]->sendChat("[EnderChest] You have created your EnderChest successfully !");
+							
+							$player->sendChat("[EnderChest] You got your first EnderChest!");
+							AchievementAPI::grantAchievement($player, "enderChest");
+							break;
 						}
+						break;
+						
+					} elseif($this->getSideChest($block) !== false) {
+					
+						if(($this->getSideChest($block)->level->getBlock(new Vector3($this->getSideChest($block)->x, $this->getSideChest($block)->y - 1, $this->getSideChest($block)->z))->getID() == 87) or ($block->level->getBlock(new Vector3($block->x, $block->y - 1, $block->z))->getID() == 87)) {
+							$player->sendChat("[EnderChest] You can't make big Enderchest!");
+							return false;
+						}
+						break;
 					}
+					break;
+				}
+				break;
+			
+			case "player.container.slot":
+				
+				$tile = $data["tile"];
+				$pslot = $data["slot"];
+				$slot = $data["slotdata"];
+				$item = $data["itemdata"];
+				$player = $data["player"];
+
+				if($tile->class == TILE_CHEST and $this->enderchests->exists($tile->x . "," . $tile->y . "," . $tile->z)){
+					if($this->enderchests->get($tile->x . "," . $tile->y . "," . $tile->z) == $player->username) {
+						if($item->getID() !== AIR and $slot->getID() == $item->getID()){
+							if($slot->count < $item->count){
+								if($player->removeItem($item->getID(), $item->getMetadata(), $item->count - $slot->count, false) === false){
+									return false;
+								}
+							}elseif($slot->count > $item->count){
+								$player->addItem($item->getID(), $item->getMetadata(), $slot->count - $item->count, false);
+							}
+						}else{
+							if($player->removeItem($item->getID(), $item->getMetadata(), $item->count, false) === false){
+								return false;
+							}
+							$player->addItem($slot->getID(), $slot->getMetadata(), $slot->count, false);
+						}
+						$tile->setSlot($pslot, $item);
+						
+						$slots = array();	
+						for($i = 0; $i < 27; $i++){
+							$slots[] = array($tile->getSlot($i)->getID(),$tile->getSlot($i)->count,$tile->getSlot($i)->getMetadata());
+						}
+
+						$this->enderchests->set($player->username,$slots);
+						$this->enderchests->save();
+						break;
+					}
+					break;
 				}
 				break;
 		}
 	}
 	
-	/*Function that I ll work with for paired chests issue
-	
-	private function getSideChest($data)
+	private function getSideChest($block)
 	{
-		$item = $data->level->getBlock(new Vector3($data->x + 1, $data->y, $data->z));
-		if ($item->getID() === CHEST) return $item;
-		$item = $data->level->getBlock(new Vector3($data->x - 1, $data->y, $data->z));
-		if ($item->getID() === CHEST) return $item;
-		$item = $data->level->getBlock(new Vector3($data->x, $data->y, $data->z + 1));
-		if ($item->getID() === CHEST) return $item;
-		$item = $data->level->getBlock(new Vector3($data->x, $data->y, $data->z - 1));
-		if ($item->getID() === CHEST) return $item;
+		$chest = $block->level->getBlock(new Vector3($block->x + 1, $block->y, $block->z));
+		if ($chest->getID() === CHEST) return $chest;
+		$chest = $block->level->getBlock(new Vector3($block->x - 1, $block->y, $block->z));
+		if ($chest->getID() === CHEST) return $chest;
+		$chest = $block->level->getBlock(new Vector3($block->x, $block->y, $block->z + 1));
+		if ($chest->getID() === CHEST) return $chest;
+		$chest = $block->level->getBlock(new Vector3($block->x, $block->y, $block->z - 1));
+		if ($chest->getID() === CHEST) return $chest;
 		return false;
-	}*/
+	}
 
 	public function __destruct()
 	{
