@@ -4,7 +4,7 @@
 __PocketMine Plugin__
 name=EnderChest
 description=I hope you know what's an EnderChest :P
-version=1.2
+version=1.3
 author=BlinkSun
 class=EnderChest
 apiversion=11,12
