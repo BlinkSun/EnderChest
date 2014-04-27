@@ -44,7 +44,6 @@ class EnderChest implements Plugin
 			if(array_search($packet->windowid,$this->openEnderchest) !== false) {
 				//console("openEnderchest(" . array_search($packet->windowid,$this->openEnderchest) . ") = ". $packet->windowid);
 				unset($this->openEnderchest[array_search($packet->windowid,$this->openEnderchest)]);
-				$this->openEnderchest = array_values($this->openEnderchest);
 			}
 		}
 	}
